@@ -16,14 +16,6 @@ Total  : 0
 ```
 
 ```mermaid
-flowchart TD
-    N[No solutions recorded yet]
-    N --> A[Add files to easy/]
-    N --> B[Add files to medium/]
-    N --> C[Add files to hard/]
-```
-
-```mermaid
 pie showData
     title Sample Visualization
     "Easy" : 3

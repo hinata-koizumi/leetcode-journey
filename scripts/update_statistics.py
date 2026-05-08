@@ -99,9 +99,9 @@ def format_report(stats: Stats) -> str:
 def format_mermaid_section(stats: Stats) -> str:
     """Create Mermaid markdown section based on current statistics.
 
-    When there are solved problems, we render a pie chart for distribution.
-    When there are no solved problems yet, we render a small flow chart plus
-    a sample pie chart so readers can still preview the visual style.
+    We keep a single pie chart block for readability in README.
+    - With solved problems: real distribution.
+    - Without solved problems: sample visualization preview.
     """
     if stats.total > 0:
         lines = [
@@ -117,14 +117,6 @@ def format_mermaid_section(stats: Stats) -> str:
 
     return "\n".join(
         [
-            "```mermaid",
-            "flowchart TD",
-            "    N[No solutions recorded yet]",
-            "    N --> A[Add files to easy/]",
-            "    N --> B[Add files to medium/]",
-            "    N --> C[Add files to hard/]",
-            "```",
-            "",
             "```mermaid",
             "pie showData",
             '    title Sample Visualization',
