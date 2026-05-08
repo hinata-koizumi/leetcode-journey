@@ -1,13 +1,13 @@
 # LeetCode Journey
 
-LeetCode の解答を難易度別に管理するリポジトリです。
+アルゴリズムとデータ構造の実装力を示すために、LeetCode の解答を難易度別に整理したポートフォリオリポジトリです。
 
-## Statistics
+## Progress
 
 <!-- STATS:START -->
 ```text
-LeetCode Progress Report
-========================
+LeetCode Progress
+=================
 Easy   : 0
 Medium : 0
 Hard   : 0
@@ -17,7 +17,7 @@ Total  : 0
 
 ```mermaid
 pie showData
-    title Sample Visualization
+    title Difficulty Distribution (Sample)
     "Easy" : 3
     "Medium" : 2
     "Hard" : 1

@@ -82,8 +82,8 @@ def collect_stats(repo_root: Path) -> Stats:
 def format_report(stats: Stats) -> str:
     """Create a human-readable text report for terminal and README embedding."""
     lines = [
-        "LeetCode Progress Report",
-        "========================",
+        "LeetCode Progress",
+        "=================",
     ]
     for difficulty in DIFFICULTY_DIRS:
         lines.append(f"{difficulty:<7}: {stats.by_difficulty.get(difficulty, 0)}")
@@ -119,7 +119,7 @@ def format_mermaid_section(stats: Stats) -> str:
         [
             "```mermaid",
             "pie showData",
-            '    title Sample Visualization',
+            '    title Difficulty Distribution (Sample)',
             '    "Easy" : 3',
             '    "Medium" : 2',
             '    "Hard" : 1',
