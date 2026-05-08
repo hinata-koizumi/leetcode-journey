@@ -16,8 +16,8 @@ Total  : 0
 ```
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#a6e22e"}}}%%
 pie showData
-    title Difficulty Distribution (Sample)
     "Easy" : 3
     "Medium" : 2
     "Hard" : 1

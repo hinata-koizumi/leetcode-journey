@@ -103,11 +103,16 @@ def format_mermaid_section(stats: Stats) -> str:
     - With solved problems: real distribution.
     - Without solved problems: sample visualization preview.
     """
+    bright_theme_init = (
+        '%%{init: {"theme":"base","themeVariables":'
+        '{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#a6e22e"}}}%%'
+    )
+
     if stats.total > 0:
         lines = [
             "```mermaid",
+            bright_theme_init,
             "pie showData",
-            '    title Problem Distribution by Difficulty',
         ]
         for difficulty in DIFFICULTY_DIRS:
             count = stats.by_difficulty.get(difficulty, 0)
@@ -118,8 +123,8 @@ def format_mermaid_section(stats: Stats) -> str:
     return "\n".join(
         [
             "```mermaid",
+            bright_theme_init,
             "pie showData",
-            '    title Difficulty Distribution (Sample)',
             '    "Easy" : 3',
             '    "Medium" : 2',
             '    "Hard" : 1',
