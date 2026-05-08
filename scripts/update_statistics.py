@@ -106,7 +106,7 @@ def format_mermaid_section(stats: Stats) -> str:
     bright_theme_init = (
         '%%{init: {"theme":"base","themeVariables":'
         '{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b",'
-        '"pieSectionTextColor":"#334155","pieLegendTextColor":"#334155"}}}%%'
+        '"pieSectionTextColor":"#1f2937","pieLegendTextColor":"#1f2937"}}}%%'
     )
 
     if stats.total > 0:
