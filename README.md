@@ -16,7 +16,7 @@ Total  : 0
 ```
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b","pieSectionTextColor":"#111111","pieLegendTextColor":"#111111"}}}%%
+%%{init: {"theme":"base","themeVariables":{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b","pieSectionTextColor":"#334155","pieLegendTextColor":"#334155"}}}%%
 pie showData
     "Easy" : 3
     "Medium" : 2
