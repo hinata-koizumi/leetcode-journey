@@ -96,14 +96,58 @@ def format_report(stats: Stats) -> str:
     return "\n".join(lines)
 
 
-def render_readme_stats_block(report: str) -> str:
-    """Render report as the README markdown block surrounded by markers."""
-    return (
-        f"{STATS_START_MARKER}\n"
-        "```text\n"
-        f"{report}\n"
-        "```\n"
-        f"{STATS_END_MARKER}"
+def format_mermaid_section(stats: Stats) -> str:
+    """Create Mermaid markdown section based on current statistics.
+
+    When there are solved problems, we render a pie chart for distribution.
+    When there are no solved problems yet, we render a small flow chart plus
+    a sample pie chart so readers can still preview the visual style.
+    """
+    if stats.total > 0:
+        lines = [
+            "```mermaid",
+            "pie showData",
+            '    title Problem Distribution by Difficulty',
+        ]
+        for difficulty in DIFFICULTY_DIRS:
+            count = stats.by_difficulty.get(difficulty, 0)
+            lines.append(f'    "{difficulty}" : {count}')
+        lines.append("```")
+        return "\n".join(lines)
+
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart TD",
+            "    N[No solutions recorded yet]",
+            "    N --> A[Add files to easy/]",
+            "    N --> B[Add files to medium/]",
+            "    N --> C[Add files to hard/]",
+            "```",
+            "",
+            "```mermaid",
+            "pie showData",
+            '    title Sample Visualization',
+            '    "Easy" : 3',
+            '    "Medium" : 2',
+            '    "Hard" : 1',
+            "```",
+        ]
+    )
+
+
+def render_readme_stats_block(report: str, mermaid_section: str) -> str:
+    """Render README statistics block with text and Mermaid chart."""
+    return "\n".join(
+        [
+            STATS_START_MARKER,
+            "```text",
+            report,
+            "```",
+            "",
+            mermaid_section,
+            STATS_END_MARKER,
+        ]
     )
 
 
@@ -120,7 +164,8 @@ def update_readme(repo_root: Path, report: str) -> bool:
         raise ValueError("README.md statistics markers are in invalid order.")
 
     end_index += len(STATS_END_MARKER)
-    new_block = render_readme_stats_block(report)
+    mermaid_section = format_mermaid_section(collect_stats(repo_root))
+    new_block = render_readme_stats_block(report, mermaid_section)
     updated_text = readme_text[:start_index] + new_block + readme_text[end_index:]
 
     if updated_text == readme_text:
@@ -156,9 +201,12 @@ def main() -> int:
 
     stats = collect_stats(repo_root)
     report = format_report(stats)
+    mermaid_section = format_mermaid_section(stats)
     print(report)
 
     if args.no_write_readme:
+        print("\nMermaid chart preview:\n")
+        print(mermaid_section)
         return 0
 
     changed = update_readme(repo_root, report)
