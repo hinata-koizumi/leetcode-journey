@@ -79,31 +79,36 @@ def collect_stats(repo_root: Path) -> Stats:
     return Stats(by_difficulty=counts)
 
 
-def format_progress_text(stats: Stats) -> str:
-    """Human-readable Japanese progress copy for README (counts only, no placeholders)."""
+def format_progress_markdown(stats: Stats) -> str:
+    """GFM table for README: scannable counts without charts."""
     e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
+    total = stats.total
     return "\n".join(
         [
-            f"これまでに記録した問題は合計 {stats.total} 問です。",
-            f"内訳は Easy が {e} 問、Medium が {m} 問、Hard が {h} 問です。",
+            "| 難易度 | 件数 |",
+            "|:------|----:|",
+            f"| Easy | {e} |",
+            f"| Medium | {m} |",
+            f"| Hard | {h} |",
+            f"| **合計** | **{total}** |",
         ]
     )
 
 
-def render_readme_stats_block(progress_text: str) -> str:
-    """Render README statistics block as plain prose inside a text fence."""
+def render_readme_stats_block(progress_markdown: str) -> str:
+    """Insert GitHub-rendered Markdown between markers (no code fence so tables work)."""
     return "\n".join(
         [
             STATS_START_MARKER,
-            "```text",
-            progress_text,
-            "```",
+            "",
+            progress_markdown,
+            "",
             STATS_END_MARKER,
         ]
     )
 
 
-def update_readme(repo_root: Path, progress_text: str) -> bool:
+def update_readme(repo_root: Path, progress_markdown: str) -> bool:
     """Replace README statistics block and return True when file changed."""
     readme_path = repo_root / "README.md"
     readme_text = readme_path.read_text(encoding="utf-8")
@@ -116,7 +121,7 @@ def update_readme(repo_root: Path, progress_text: str) -> bool:
         raise ValueError("README.md statistics markers are in invalid order.")
 
     end_index += len(STATS_END_MARKER)
-    new_block = render_readme_stats_block(progress_text)
+    new_block = render_readme_stats_block(progress_markdown)
     updated_text = readme_text[:start_index] + new_block + readme_text[end_index:]
 
     if updated_text == readme_text:
@@ -140,7 +145,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-write-readme",
         action="store_true",
-        help="Print progress text only without modifying README.md.",
+        help="Print progress Markdown only without modifying README.md.",
     )
     return parser.parse_args()
 
@@ -151,13 +156,13 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
 
     stats = collect_stats(repo_root)
-    progress_text = format_progress_text(stats)
-    print(progress_text)
+    progress_markdown = format_progress_markdown(stats)
+    print(progress_markdown)
 
     if args.no_write_readme:
         return 0
 
-    changed = update_readme(repo_root, progress_text)
+    changed = update_readme(repo_root, progress_markdown)
     if changed:
         print("\nREADME statistics updated.")
     else:
