@@ -79,43 +79,35 @@ def collect_stats(repo_root: Path) -> Stats:
     return Stats(by_difficulty=counts)
 
 
-def _progress_bar_row(label: str, count: int, max_count: int, width: int = 22) -> str:
-    """One line: label, block bar, count (bar fills relative to max among difficulties)."""
-    if max_count <= 0:
-        filled = 0
-    else:
-        filled = min(width, round(count / max_count * width))
-    empty = width - filled
-    bar = "\u2588" * filled + "\u2591" * empty
-    return f"{label:<7} [{bar}] {count}"
-
-
-def format_progress_bars(stats: Stats) -> str:
-    """ASCII-safe progress bars: longest category fills the bar width."""
-    counts = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
-    max_c = max(counts) if counts else 0
-    lines = [_progress_bar_row(d, stats.by_difficulty[d], max_c) for d in DIFFICULTY_DIRS]
-    return "\n".join(lines)
-
-
-def format_report(stats: Stats) -> str:
-    """Create a human-readable text report for terminal and README embedding."""
+def format_effort_summary(stats: Stats) -> str:
+    """Short narrative for README: effort story without duplicating the bar chart."""
     lines = [
-        "LeetCode Progress",
-        "=================",
+        "進捗メモ",
+        "========",
     ]
-    for difficulty in DIFFICULTY_DIRS:
-        lines.append(f"{difficulty:<7}: {stats.by_difficulty.get(difficulty, 0)}")
-    lines.extend(
-        [
-            "------------------------",
-            f"Total  : {stats.total}",
-            "",
-            "難易度別（相対スケール）",
-            "------------------------------",
-            format_progress_bars(stats),
-        ]
-    )
+    total = stats.total
+    if total == 0:
+        lines.append(
+            "ここに記録はまだありません。解答を追加すると、下のグラフとこのメモが更新されます。"
+        )
+        return "\n".join(lines)
+
+    lines.append(f"このリポジトリに累計 {total} 問を記録しています。")
+
+    if total < 10:
+        lines.append("少しずつ積み上げていくフェーズです。")
+    elif total < 50:
+        lines.append("継続して記録が増えています。")
+    elif total < 100:
+        lines.append("振り返りとボリュームの両方が育ってきています。")
+    else:
+        lines.append("長期的な取り組みとして蓄積が続いています。")
+
+    medium_hard = stats.by_difficulty["Medium"] + stats.by_difficulty["Hard"]
+    if total >= 5 and medium_hard >= 1:
+        lines.append("Medium / Hard にも継続して取り組んでいます。")
+
+    lines.append("難易度ごとの内訳は下のグラフで確認できます。")
     return "\n".join(lines)
 
 
@@ -155,13 +147,13 @@ def format_mermaid_section(stats: Stats) -> str:
     return "\n".join(lines)
 
 
-def render_readme_stats_block(report: str, mermaid_section: str) -> str:
-    """Render README statistics block with text and Mermaid chart."""
+def render_readme_stats_block(effort_summary: str, mermaid_section: str) -> str:
+    """Render README statistics block with narrative text and Mermaid chart."""
     return "\n".join(
         [
             STATS_START_MARKER,
             "```text",
-            report,
+            effort_summary,
             "```",
             "",
             mermaid_section,
@@ -170,7 +162,7 @@ def render_readme_stats_block(report: str, mermaid_section: str) -> str:
     )
 
 
-def update_readme(repo_root: Path, report: str) -> bool:
+def update_readme(repo_root: Path, effort_summary: str) -> bool:
     """Replace README statistics block and return True when file changed."""
     readme_path = repo_root / "README.md"
     readme_text = readme_path.read_text(encoding="utf-8")
@@ -184,7 +176,7 @@ def update_readme(repo_root: Path, report: str) -> bool:
 
     end_index += len(STATS_END_MARKER)
     mermaid_section = format_mermaid_section(collect_stats(repo_root))
-    new_block = render_readme_stats_block(report, mermaid_section)
+    new_block = render_readme_stats_block(effort_summary, mermaid_section)
     updated_text = readme_text[:start_index] + new_block + readme_text[end_index:]
 
     if updated_text == readme_text:
@@ -208,7 +200,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-write-readme",
         action="store_true",
-        help="Print report only without modifying README.md.",
+        help="Print effort summary only without modifying README.md.",
     )
     return parser.parse_args()
 
@@ -219,16 +211,16 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
 
     stats = collect_stats(repo_root)
-    report = format_report(stats)
+    effort_summary = format_effort_summary(stats)
     mermaid_section = format_mermaid_section(stats)
-    print(report)
+    print(effort_summary)
 
     if args.no_write_readme:
         print("\nMermaid diagram preview:\n")
         print(mermaid_section)
         return 0
 
-    changed = update_readme(repo_root, report)
+    changed = update_readme(repo_root, effort_summary)
     if changed:
         print("\nREADME statistics updated.")
     else:
