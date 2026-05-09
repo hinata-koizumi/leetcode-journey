@@ -8,6 +8,7 @@ It is designed to be simple to extend by editing the DIFFICULTY_DIRS mapping.
 from __future__ import annotations
 
 import argparse
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -108,26 +109,52 @@ def render_readme_stats_block(progress_markdown: str) -> str:
     )
 
 
+def _read_readme(path: Path) -> str:
+    """Read README; utf-8-sig strips BOM so <!-- STATS --> markers are found on CI."""
+    return path.read_bytes().decode("utf-8-sig")
+
+
+def _replace_stats_section(readme_text: str, new_block: str) -> str | None:
+    """Apply STATS markers replacement, or replace ## Progress body until next ##."""
+    start_index = readme_text.find(STATS_START_MARKER)
+    end_index = readme_text.find(STATS_END_MARKER)
+    if start_index != -1 and end_index != -1 and end_index > start_index:
+        end_index += len(STATS_END_MARKER)
+        return readme_text[:start_index] + new_block + readme_text[end_index:]
+
+    match = re.search(
+        r"(^## Progress\s*\n)([\s\S]*?)(?=^## |\Z)",
+        readme_text,
+        flags=re.MULTILINE,
+    )
+    if match:
+        return (
+            readme_text[: match.start()]
+            + match.group(1)
+            + new_block
+            + "\n\n"
+            + readme_text[match.end() :]
+        )
+    return None
+
+
 def update_readme(repo_root: Path, progress_markdown: str) -> bool:
     """Replace README statistics block and return True when file changed."""
     readme_path = repo_root / "README.md"
-    readme_text = readme_path.read_text(encoding="utf-8")
-
-    start_index = readme_text.find(STATS_START_MARKER)
-    end_index = readme_text.find(STATS_END_MARKER)
-    if start_index == -1 or end_index == -1:
-        raise ValueError("README.md is missing STATS markers.")
-    if end_index < start_index:
-        raise ValueError("README.md statistics markers are in invalid order.")
-
-    end_index += len(STATS_END_MARKER)
+    readme_text = _read_readme(readme_path)
     new_block = render_readme_stats_block(progress_markdown)
-    updated_text = readme_text[:start_index] + new_block + readme_text[end_index:]
+
+    updated_text = _replace_stats_section(readme_text, new_block)
+    if updated_text is None:
+        raise ValueError(
+            "README.md must contain <!-- STATS:START --> ... <!-- STATS:END --> "
+            "or a ## Progress section to inject statistics under."
+        )
 
     if updated_text == readme_text:
         return False
 
-    readme_path.write_text(updated_text, encoding="utf-8")
+    readme_path.write_text(updated_text, encoding="utf-8", newline="\n")
     return True
 
 
