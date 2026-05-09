@@ -79,6 +79,25 @@ def collect_stats(repo_root: Path) -> Stats:
     return Stats(by_difficulty=counts)
 
 
+def _progress_bar_row(label: str, count: int, max_count: int, width: int = 22) -> str:
+    """One line: label, block bar, count (bar fills relative to max among difficulties)."""
+    if max_count <= 0:
+        filled = 0
+    else:
+        filled = min(width, round(count / max_count * width))
+    empty = width - filled
+    bar = "\u2588" * filled + "\u2591" * empty
+    return f"{label:<7} [{bar}] {count}"
+
+
+def format_progress_bars(stats: Stats) -> str:
+    """ASCII-safe progress bars: longest category fills the bar width."""
+    counts = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
+    max_c = max(counts) if counts else 0
+    lines = [_progress_bar_row(d, stats.by_difficulty[d], max_c) for d in DIFFICULTY_DIRS]
+    return "\n".join(lines)
+
+
 def format_report(stats: Stats) -> str:
     """Create a human-readable text report for terminal and README embedding."""
     lines = [
@@ -91,46 +110,49 @@ def format_report(stats: Stats) -> str:
         [
             "------------------------",
             f"Total  : {stats.total}",
+            "",
+            "難易度別（相対スケール）",
+            "------------------------------",
+            format_progress_bars(stats),
         ]
     )
     return "\n".join(lines)
 
 
-def format_mermaid_section(stats: Stats) -> str:
-    """Create Mermaid markdown section based on current statistics.
-
-    We keep a single pie chart block for readability in README.
-    - With solved problems: real distribution.
-    - Without solved problems: sample visualization preview.
-    """
-    bright_theme_init = (
-        '%%{init: {"theme":"base","themeVariables":'
-        '{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b"}}}%%'
-    )
-
+def _bar_chart_values(stats: Stats) -> tuple[list[int], int]:
+    """Return bar heights and y-axis max for Mermaid xychart-beta."""
+    counts = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
+    max_c = max(counts) if counts else 0
     if stats.total > 0:
-        lines = [
-            "```mermaid",
-            bright_theme_init,
-            "pie showData",
-        ]
-        for difficulty in DIFFICULTY_DIRS:
-            count = stats.by_difficulty.get(difficulty, 0)
-            lines.append(f'    "{difficulty}" : {count}')
-        lines.append("```")
-        return "\n".join(lines)
+        # Headroom above the tallest bar; minimum scale so small counts stay readable.
+        y_max = max(5, max_c + max(2, (max_c // 10) + 1))
+        return counts, y_max
+    # Sample preview when there are no solutions yet.
+    return [3, 2, 1], 5
 
-    return "\n".join(
-        [
-            "```mermaid",
-            bright_theme_init,
-            "pie showData",
-            '    "Easy" : 3',
-            '    "Medium" : 2',
-            '    "Hard" : 1',
-            "```",
-        ]
-    )
+
+def format_mermaid_section(stats: Stats) -> str:
+    """Create Mermaid markdown: horizontal bar chart (xychart-beta) for progress.
+
+    Uses real counts when total > 0; otherwise a short sample chart for layout preview.
+    """
+    chart_init = '%%{init: {"theme":"base"}}%%'
+    values, y_max = _bar_chart_values(stats)
+    # x-axis labels must stay aligned with DIFFICULTY_DIRS order.
+    labels = ", ".join(DIFFICULTY_DIRS.keys())
+    vals_str = ", ".join(str(v) for v in values)
+
+    lines = [
+        "```mermaid",
+        chart_init,
+        "xychart-beta",
+        '    title "Problems by difficulty"',
+        f"    x-axis [{labels}]",
+        f'    y-axis "Count" 0 --> {y_max}',
+        f"    bar [{vals_str}]",
+        "```",
+    ]
+    return "\n".join(lines)
 
 
 def render_readme_stats_block(report: str, mermaid_section: str) -> str:
@@ -202,7 +224,7 @@ def main() -> int:
     print(report)
 
     if args.no_write_readme:
-        print("\nMermaid chart preview:\n")
+        print("\nMermaid diagram preview:\n")
         print(mermaid_section)
         return 0
 

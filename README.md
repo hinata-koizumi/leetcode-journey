@@ -13,14 +13,21 @@ Medium : 0
 Hard   : 0
 ------------------------
 Total  : 0
+
+難易度別（相対スケール）
+------------------------------
+Easy    [░░░░░░░░░░░░░░░░░░░░░░] 0
+Medium  [░░░░░░░░░░░░░░░░░░░░░░] 0
+Hard    [░░░░░░░░░░░░░░░░░░░░░░] 0
 ```
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b"}}}%%
-pie showData
-    "Easy" : 3
-    "Medium" : 2
-    "Hard" : 1
+%%{init: {"theme":"base"}}%%
+xychart-beta
+    title "Problems by difficulty"
+    x-axis [Easy, Medium, Hard]
+    y-axis "Count" 0 --> 5
+    bar [3, 2, 1]
 ```
 <!-- STATS:END -->
 
