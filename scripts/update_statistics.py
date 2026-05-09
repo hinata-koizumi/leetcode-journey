@@ -19,8 +19,12 @@ DIFFICULTY_DIRS: dict[str, str] = {
     "Hard": "hard",
 }
 
-# Bar colors for Mermaid xychart-beta: one color per `bar` series (see format_mermaid_section).
-XY_CHART_BAR_COLORS = "#66d9ef,#ffd866,#ff6b6b"
+# Pie slice colors (Easy → Medium → Hard). GitHub often ignores xyChart plotColorPalette;
+# pie + pie1/pie2/pie3 is reliably themed on github.com.
+PIE_THEME_INIT = (
+    '%%{init: {"theme":"base","themeVariables":'
+    '{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b"}}}%%'
+)
 
 # Extensions treated as solution files.
 # Add/remove extensions here when your repository conventions evolve.
@@ -87,46 +91,28 @@ def format_total_summary(stats: Stats) -> str:
     return f"合計 {stats.total} 問"
 
 
-def _counts_and_y_max(stats: Stats) -> tuple[tuple[int, int, int], int]:
-    """Return (Easy, Medium, Hard) counts and y-axis upper bound.
-
-    Single `bar [a,b,c]` is one series and often renders all bars the same color on
-    GitHub. We instead emit three series so each difficulty gets its own palette color.
-    """
+def _difficulty_counts_tuple(stats: Stats) -> tuple[int, int, int]:
+    """Return (Easy, Medium, Hard) counts; sample when repo has no solutions yet."""
     if stats.total > 0:
         e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
-        max_c = max(e, m, h)
-        y_max = max(5, max_c + max(2, (max_c // 10) + 1))
-        return (e, m, h), y_max
-    # Sample preview when there are no solutions yet.
-    return (3, 2, 1), 5
+        return (e, m, h)
+    return (3, 2, 1)
 
 
 def format_mermaid_section(stats: Stats) -> str:
-    """Create Mermaid markdown: bar chart (xychart-beta) for progress.
+    """Create Mermaid markdown: pie chart by difficulty with stable slice colors on GitHub.
 
-    Uses real counts when total > 0; otherwise a short sample chart for layout preview.
+    Uses bar chart counts when total > 0; otherwise sample values for preview.
     """
-    chart_init = (
-        '%%{init: {"theme":"base","themeVariables":'
-        '{"xyChart":{"plotColorPalette":"'
-        + XY_CHART_BAR_COLORS
-        + '"}}}%%'
-    )
-    (easy, medium, hard), y_max = _counts_and_y_max(stats)
-    labels = ", ".join(DIFFICULTY_DIRS.keys())
+    easy, medium, hard = _difficulty_counts_tuple(stats)
 
     lines = [
         "```mermaid",
-        chart_init,
-        "xychart-beta",
-        '    title "Problems by difficulty"',
-        f"    x-axis [{labels}]",
-        f'    y-axis "Count" 0 --> {y_max}',
-        # Three series so plotColorPalette applies Easy / Medium / Hard separately.
-        f"    bar [{easy}, 0, 0]",
-        f"    bar [0, {medium}, 0]",
-        f"    bar [0, 0, {hard}]",
+        PIE_THEME_INIT,
+        "pie showData",
+        f'    "Easy" : {easy}',
+        f'    "Medium" : {medium}',
+        f'    "Hard" : {hard}',
         "```",
     ]
     return "\n".join(lines)

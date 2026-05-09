@@ -10,14 +10,11 @@ LeetCode の解答を難易度別に整理したポートフォリオリポジ�
 ```
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"xyChart":{"plotColorPalette":"#66d9ef,#ffd866,#ff6b6b"}}}%%
-xychart-beta
-    title "Problems by difficulty"
-    x-axis [Easy, Medium, Hard]
-    y-axis "Count" 0 --> 5
-    bar [3, 0, 0]
-    bar [0, 2, 0]
-    bar [0, 0, 1]
+%%{init: {"theme":"base","themeVariables":{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b"}}}%%
+pie showData
+    "Easy" : 3
+    "Medium" : 2
+    "Hard" : 1
 ```
 <!-- STATS:END -->
 
