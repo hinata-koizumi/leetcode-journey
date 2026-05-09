@@ -19,13 +19,6 @@ DIFFICULTY_DIRS: dict[str, str] = {
     "Hard": "hard",
 }
 
-# Pie slice colors (Easy → Medium → Hard). GitHub often ignores xyChart plotColorPalette;
-# pie + pie1/pie2/pie3 is reliably themed on github.com.
-PIE_THEME_INIT = (
-    '%%{init: {"theme":"base","themeVariables":'
-    '{"pie1":"#66d9ef","pie2":"#ffd866","pie3":"#ff6b6b"}}}%%'
-)
-
 # Extensions treated as solution files.
 # Add/remove extensions here when your repository conventions evolve.
 SOLUTION_EXTENSIONS: set[str] = {
@@ -86,54 +79,39 @@ def collect_stats(repo_root: Path) -> Stats:
     return Stats(by_difficulty=counts)
 
 
-def format_total_summary(stats: Stats) -> str:
-    """Single line: total number of recorded solutions (matches scanned files)."""
-    return f"合計 {stats.total} 問"
+def format_progress_text(stats: Stats) -> str:
+    """Human-readable Japanese progress copy for README (no charts)."""
+    if stats.total == 0:
+        return "\n".join(
+            [
+                "まだ記録された解答はありません。",
+                "`easy` / `medium` / `hard` に解答ファイルを追加して push すると、ここが更新されます。",
+            ]
+        )
+
+    e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
+    return "\n".join(
+        [
+            f"これまでに記録した問題は合計 {stats.total} 問です。",
+            f"内訳は Easy が {e} 問、Medium が {m} 問、Hard が {h} 問です。",
+        ]
+    )
 
 
-def _difficulty_counts_tuple(stats: Stats) -> tuple[int, int, int]:
-    """Return (Easy, Medium, Hard) counts; sample when repo has no solutions yet."""
-    if stats.total > 0:
-        e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
-        return (e, m, h)
-    return (3, 2, 1)
-
-
-def format_mermaid_section(stats: Stats) -> str:
-    """Create Mermaid markdown: pie chart by difficulty with stable slice colors on GitHub.
-
-    Uses bar chart counts when total > 0; otherwise sample values for preview.
-    """
-    easy, medium, hard = _difficulty_counts_tuple(stats)
-
-    lines = [
-        "```mermaid",
-        PIE_THEME_INIT,
-        "pie showData",
-        f'    "Easy" : {easy}',
-        f'    "Medium" : {medium}',
-        f'    "Hard" : {hard}',
-        "```",
-    ]
-    return "\n".join(lines)
-
-
-def render_readme_stats_block(total_summary: str, mermaid_section: str) -> str:
-    """Render README statistics block with narrative text and Mermaid chart."""
+def render_readme_stats_block(progress_text: str) -> str:
+    """Render README statistics block as plain prose inside a text fence."""
     return "\n".join(
         [
             STATS_START_MARKER,
             "```text",
-            total_summary,
+            progress_text,
             "```",
-            "",
-            mermaid_section,
             STATS_END_MARKER,
         ]
     )
 
 
-def update_readme(repo_root: Path, total_summary: str) -> bool:
+def update_readme(repo_root: Path, progress_text: str) -> bool:
     """Replace README statistics block and return True when file changed."""
     readme_path = repo_root / "README.md"
     readme_text = readme_path.read_text(encoding="utf-8")
@@ -146,8 +124,7 @@ def update_readme(repo_root: Path, total_summary: str) -> bool:
         raise ValueError("README.md statistics markers are in invalid order.")
 
     end_index += len(STATS_END_MARKER)
-    mermaid_section = format_mermaid_section(collect_stats(repo_root))
-    new_block = render_readme_stats_block(total_summary, mermaid_section)
+    new_block = render_readme_stats_block(progress_text)
     updated_text = readme_text[:start_index] + new_block + readme_text[end_index:]
 
     if updated_text == readme_text:
@@ -171,7 +148,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-write-readme",
         action="store_true",
-        help="Print total line only without modifying README.md.",
+        help="Print progress text only without modifying README.md.",
     )
     return parser.parse_args()
 
@@ -182,16 +159,13 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
 
     stats = collect_stats(repo_root)
-    total_summary = format_total_summary(stats)
-    mermaid_section = format_mermaid_section(stats)
-    print(total_summary)
+    progress_text = format_progress_text(stats)
+    print(progress_text)
 
     if args.no_write_readme:
-        print("\nMermaid diagram preview:\n")
-        print(mermaid_section)
         return 0
 
-    changed = update_readme(repo_root, total_summary)
+    changed = update_readme(repo_root, progress_text)
     if changed:
         print("\nREADME statistics updated.")
     else:
