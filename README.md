@@ -15,7 +15,9 @@ xychart-beta
     title "Problems by difficulty"
     x-axis [Easy, Medium, Hard]
     y-axis "Count" 0 --> 5
-    bar [3, 2, 1]
+    bar [3, 0, 0]
+    bar [0, 2, 0]
+    bar [0, 0, 1]
 ```
 <!-- STATS:END -->
 

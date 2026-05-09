@@ -19,8 +19,7 @@ DIFFICULTY_DIRS: dict[str, str] = {
     "Hard": "hard",
 }
 
-# Bar colors for Mermaid xychart-beta (same order as DIFFICULTY_DIRS keys).
-# Applied sequentially to each category bar.
+# Bar colors for Mermaid xychart-beta: one color per `bar` series (see format_mermaid_section).
 XY_CHART_BAR_COLORS = "#66d9ef,#ffd866,#ff6b6b"
 
 # Extensions treated as solution files.
@@ -88,20 +87,23 @@ def format_total_summary(stats: Stats) -> str:
     return f"合計 {stats.total} 問"
 
 
-def _bar_chart_values(stats: Stats) -> tuple[list[int], int]:
-    """Return bar heights and y-axis max for Mermaid xychart-beta."""
-    counts = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
-    max_c = max(counts) if counts else 0
+def _counts_and_y_max(stats: Stats) -> tuple[tuple[int, int, int], int]:
+    """Return (Easy, Medium, Hard) counts and y-axis upper bound.
+
+    Single `bar [a,b,c]` is one series and often renders all bars the same color on
+    GitHub. We instead emit three series so each difficulty gets its own palette color.
+    """
     if stats.total > 0:
-        # Headroom above the tallest bar; minimum scale so small counts stay readable.
+        e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
+        max_c = max(e, m, h)
         y_max = max(5, max_c + max(2, (max_c // 10) + 1))
-        return counts, y_max
+        return (e, m, h), y_max
     # Sample preview when there are no solutions yet.
-    return [3, 2, 1], 5
+    return (3, 2, 1), 5
 
 
 def format_mermaid_section(stats: Stats) -> str:
-    """Create Mermaid markdown: horizontal bar chart (xychart-beta) for progress.
+    """Create Mermaid markdown: bar chart (xychart-beta) for progress.
 
     Uses real counts when total > 0; otherwise a short sample chart for layout preview.
     """
@@ -111,10 +113,8 @@ def format_mermaid_section(stats: Stats) -> str:
         + XY_CHART_BAR_COLORS
         + '"}}}%%'
     )
-    values, y_max = _bar_chart_values(stats)
-    # x-axis labels must stay aligned with DIFFICULTY_DIRS order.
+    (easy, medium, hard), y_max = _counts_and_y_max(stats)
     labels = ", ".join(DIFFICULTY_DIRS.keys())
-    vals_str = ", ".join(str(v) for v in values)
 
     lines = [
         "```mermaid",
@@ -123,7 +123,10 @@ def format_mermaid_section(stats: Stats) -> str:
         '    title "Problems by difficulty"',
         f"    x-axis [{labels}]",
         f'    y-axis "Count" 0 --> {y_max}',
-        f"    bar [{vals_str}]",
+        # Three series so plotColorPalette applies Easy / Medium / Hard separately.
+        f"    bar [{easy}, 0, 0]",
+        f"    bar [0, {medium}, 0]",
+        f"    bar [0, 0, {hard}]",
         "```",
     ]
     return "\n".join(lines)
