@@ -80,15 +80,7 @@ def collect_stats(repo_root: Path) -> Stats:
 
 
 def format_progress_text(stats: Stats) -> str:
-    """Human-readable Japanese progress copy for README (no charts)."""
-    if stats.total == 0:
-        return "\n".join(
-            [
-                "まだ記録された解答はありません。",
-                "`easy` / `medium` / `hard` に解答ファイルを追加して push すると、ここが更新されます。",
-            ]
-        )
-
+    """Human-readable Japanese progress copy for README (counts only, no placeholders)."""
     e, m, h = [stats.by_difficulty[d] for d in DIFFICULTY_DIRS]
     return "\n".join(
         [
