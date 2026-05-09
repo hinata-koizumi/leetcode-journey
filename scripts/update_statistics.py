@@ -19,6 +19,10 @@ DIFFICULTY_DIRS: dict[str, str] = {
     "Hard": "hard",
 }
 
+# Bar colors for Mermaid xychart-beta (same order as DIFFICULTY_DIRS keys).
+# Applied sequentially to each category bar.
+XY_CHART_BAR_COLORS = "#66d9ef,#ffd866,#ff6b6b"
+
 # Extensions treated as solution files.
 # Add/remove extensions here when your repository conventions evolve.
 SOLUTION_EXTENSIONS: set[str] = {
@@ -101,7 +105,12 @@ def format_mermaid_section(stats: Stats) -> str:
 
     Uses real counts when total > 0; otherwise a short sample chart for layout preview.
     """
-    chart_init = '%%{init: {"theme":"base"}}%%'
+    chart_init = (
+        '%%{init: {"theme":"base","themeVariables":'
+        '{"xyChart":{"plotColorPalette":"'
+        + XY_CHART_BAR_COLORS
+        + '"}}}%%'
+    )
     values, y_max = _bar_chart_values(stats)
     # x-axis labels must stay aligned with DIFFICULTY_DIRS order.
     labels = ", ".join(DIFFICULTY_DIRS.keys())

@@ -10,7 +10,7 @@ LeetCode の解答を難易度別に整理したポートフォリオリポジ�
 ```
 
 ```mermaid
-%%{init: {"theme":"base"}}%%
+%%{init: {"theme":"base","themeVariables":{"xyChart":{"plotColorPalette":"#66d9ef,#ffd866,#ff6b6b"}}}%%
 xychart-beta
     title "Problems by difficulty"
     x-axis [Easy, Medium, Hard]
